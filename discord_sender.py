@@ -6,12 +6,9 @@ import win32process
 import win32api
 import time
 
-
 # Finds the real Discord window
 def find_discord():
-
     discord_hwnd = None
-
 
     def callback(hwnd, extra):
 
@@ -19,17 +16,14 @@ def find_discord():
 
         title = win32gui.GetWindowText(hwnd)
 
-
         # Debug: show Discord-related windows
         if "Discord" in title:
-
             print(
                 "FOUND WINDOW:",
                 title,
                 "| HWND:",
                 hwnd
             )
-
 
         # Pick real Discord window
         if (
@@ -39,45 +33,25 @@ def find_discord():
         ):
             discord_hwnd = hwnd
 
-
-    win32gui.EnumWindows(
-        callback,
-        None
-    )
-
+    win32gui.EnumWindows(callback, None)
 
     return discord_hwnd
 
-
-
 # Focus Discord using input attachment
 def focus_discord():
-
     discord_hwnd = find_discord()
-
 
     if not discord_hwnd:
 
-        print(
-            "Discord not found"
-        )
+        print("Discord not found")
 
         return False
 
-
-
-    print(
-        "SELECTED:",
-        win32gui.GetWindowText(discord_hwnd)
-    )
-
+    print("SELECTED:",win32gui.GetWindowText(discord_hwnd))
 
     before = win32gui.GetForegroundWindow()
 
-    print(
-        "Before:",
-        win32gui.GetWindowText(before)
-    )
+    print("Before:", win32gui.GetWindowText(before))
 
 
     try:
@@ -91,7 +65,6 @@ def focus_discord():
                 win32con.SW_RESTORE
             )
 
-
         # Get thread IDs
         current_thread = win32api.GetCurrentThreadId()
 
@@ -102,7 +75,6 @@ def focus_discord():
         foreground_thread, _ = win32process.GetWindowThreadProcessId(
             before
         )
-
 
         # Attach input queues
         win32process.AttachThreadInput(
@@ -117,18 +89,11 @@ def focus_discord():
             True
         )
 
-
         # Bring Discord forward
-        win32gui.BringWindowToTop(
-            discord_hwnd
-        )
-
+        win32gui.BringWindowToTop(discord_hwnd)
 
         # Focus Discord
-        win32gui.SetForegroundWindow(
-            discord_hwnd
-        )
-
+        win32gui.SetForegroundWindow(discord_hwnd)
 
         # Detach input queues
         win32process.AttachThreadInput(
@@ -143,89 +108,49 @@ def focus_discord():
             False
         )
 
-
-        time.sleep(0.5)
-
+        time.sleep(0.1)
 
         after = win32gui.GetForegroundWindow()
 
-
-        print(
-            "After:",
-            win32gui.GetWindowText(after)
-        )
-
+        print("After:",win32gui.GetWindowText(after))
 
         if after == discord_hwnd:
 
-            print(
-                "Discord focus successful"
-            )
+            print("Discord focus successful")
 
             return True
 
-
-        print(
-            "Discord focus failed"
-        )
+        print("Discord focus failed")
 
         return False
-
-
 
     except Exception as e:
 
-        print(
-            "Focus error:",
-            e
-        )
+        print("Focus error:", e)
 
         return False
 
-
-
-
 # Sends GIF URL to Discord
 def send_gif(url):
-
     if focus_discord():
-
 
         # Copy URL
         pyperclip.copy(url)
 
+        time.sleep(0.1)
 
-        time.sleep(0.3)
-
-
-        print(
-            "Pasting..."
-        )
-
+        print("Pasting...")
 
         # Paste URL
-        pyautogui.hotkey(
-            "ctrl",
-            "v"
-        )
-
+        pyautogui.hotkey("ctrl", "v")
 
         time.sleep(0.2)
 
-
         # Send
-        pyautogui.press(
-            "enter"
-        )
+        pyautogui.press("enter")
 
-
-        print(
-            "GIF sent!"
-        )
-
+        print("GIF sent!")
 
     else:
 
-        print(
-            "Could not focus Discord."
-        )
+        print("Could not focus Discord.")
