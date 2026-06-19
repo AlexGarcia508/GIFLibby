@@ -2,7 +2,6 @@ import sqlite3
 
 # Create the database and table if they do not already exist
 def create_database():
-
     # Connect to the database file
     # If it doesn't exist, SQLite creates it automatically
     conn = sqlite3.connect("giflibby.db")
@@ -29,7 +28,6 @@ def create_database():
 
 # Add a GIF to the database
 def add_gif(name, path, categories, tags):
-
     # Connect to database
     conn = sqlite3.connect("giflibby.db")
 
@@ -47,7 +45,6 @@ def add_gif(name, path, categories, tags):
 
 # Return every GIF in the database
 def get_all_gifs():
-
     conn = sqlite3.connect("giflibby.db")
 
     cursor = conn.cursor()
@@ -64,7 +61,6 @@ def get_all_gifs():
 
 # Search for GIFs containing a tag
 def search_tags(tag):
-
     conn = sqlite3.connect("giflibby.db")
 
     cursor = conn.cursor()
@@ -83,7 +79,6 @@ def search_tags(tag):
 
 # Search for GIFs belonging to a category
 def search_category(category):
-
     conn = sqlite3.connect("giflibby.db")
 
     cursor = conn.cursor()
@@ -102,7 +97,6 @@ def search_category(category):
 
 # Delete a GIF using its ID
 def delete_gif(gif_id):
-
     conn = sqlite3.connect("giflibby.db")
 
     cursor = conn.cursor()
@@ -114,3 +108,19 @@ def delete_gif(gif_id):
 
     conn.commit()
     conn.close()
+
+def get_gif_by_id(gif_id):
+    conn = sqlite3.connect("giflibby.db")
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT * FROM gifs
+    WHERE id = ?
+    """, (gif_id,))
+
+    result = cursor.fetchone()
+
+    conn.close()
+
+    return result
