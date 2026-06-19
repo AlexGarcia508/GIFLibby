@@ -135,7 +135,7 @@ while True:
             print(f"Sending {gif[1]}...")
             print("url: " + url)
             print("About to send...")
-            time.sleep(5)
+            time.sleep(0.5)
             send_gif(url)
 
     # Exit program
