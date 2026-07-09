@@ -132,8 +132,28 @@ def get_all_gifs():
     cursor = conn.cursor()
 
     cursor.execute("""
-    SELECT *
+    SELECT
+        gifs.id,
+        gifs.name,
+        gifs.path,
+        GROUP_CONCAT(DISTINCT collections.name),
+        GROUP_CONCAT(DISTINCT tags.name)
+
     FROM gifs
+
+    LEFT JOIN gif_collections
+        ON gifs.id = gif_collections.gif_id
+
+    LEFT JOIN collections
+        ON gif_collections.collection_id = collections.id
+
+    LEFT JOIN gif_tags
+        ON gifs.id = gif_tags.gif_id
+
+    LEFT JOIN tags
+        ON gif_tags.tag_id = tags.id
+
+    GROUP BY gifs.id
     """)
 
     results = cursor.fetchall()
@@ -221,6 +241,74 @@ def get_gif_by_id(gif_id):
     FROM gifs
     WHERE id = ?
     """, (gif_id,))
+
+    result = cursor.fetchone()
+
+    conn.close()
+
+    return result
+
+# Create a new collection
+def create_collection(name):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT INTO collections (name)
+    VALUES (?)
+    """, (name.lower(),))
+
+    conn.commit()
+    conn.close()
+
+# Get all collections
+def get_all_collections():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT *
+    FROM collections
+    ORDER BY name
+    """)
+
+    results = cursor.fetchall()
+
+    conn.close()
+
+    return results
+
+# Delete collection
+def delete_collection(collection_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Remove GIF links first
+    cursor.execute("""
+    DELETE FROM gif_collections
+    WHERE collection_id = ?
+    """, (collection_id,))
+
+    # Remove collection
+    cursor.execute("""
+    DELETE FROM collections
+    WHERE id = ?
+    """, (collection_id,))
+
+    conn.commit()
+    conn.close()
+
+# Get collection by ID
+def get_collection_by_id(collection_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT *
+    FROM collections
+    WHERE id = ?
+    """, (collection_id,))
 
     result = cursor.fetchone()
 
