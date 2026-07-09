@@ -15,13 +15,13 @@ from database import (
     remove_gif_tags,
     add_gif_collection,
     add_gif_tag,
-    get_or_create_collection,
     get_or_create_tag,
     get_gif_full_details
 )
 
 # Add a new GIF
-def create_gif(name, path, collection_ids, tags):
+def create_gif(name, url, preview_path, collection_ids, tags):
+
     collections = []
 
     for collection_id in collection_ids:
@@ -44,7 +44,8 @@ def create_gif(name, path, collection_ids, tags):
 
     return add_gif(
         name,
-        path,
+        url,
+        preview_path,
         collections,
         tags
     )
@@ -98,6 +99,7 @@ def remove_collection(collection_id):
 
 # Edit GIF
 def edit_gif(gif_id, name, collection_ids, tags):
+
     update_gif_name(
         gif_id,
         name
@@ -121,7 +123,10 @@ def edit_gif(gif_id, name, collection_ids, tags):
     )
 
     for tag in tags:
-        tag_id = get_or_create_tag(tag)
+
+        tag_id = get_or_create_tag(
+            tag
+        )
 
         add_gif_tag(
             gif_id,

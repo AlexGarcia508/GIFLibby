@@ -15,7 +15,8 @@ def create_database():
     CREATE TABLE IF NOT EXISTS gifs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        path TEXT NOT NULL UNIQUE
+        url TEXT NOT NULL UNIQUE,
+        preview_path TEXT NOT NULL
     )
     """)
 
@@ -73,6 +74,7 @@ def get_or_create_collection(cursor, name):
 
 # Get or create tag
 def get_or_create_tag(cursor, name):
+
     cursor.execute("""
     INSERT OR IGNORE INTO tags (name)
     VALUES (?)
@@ -86,7 +88,8 @@ def get_or_create_tag(cursor, name):
     return cursor.fetchone()[0]
 
 # Add GIF
-def add_gif(name, path, collections, tags):
+def add_gif(name, url, preview_path, collections, tags):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -94,9 +97,13 @@ def add_gif(name, path, collections, tags):
 
         # Add GIF
         cursor.execute("""
-        INSERT INTO gifs (name, path)
-        VALUES (?, ?)
-        """, (name, path))
+        INSERT INTO gifs (
+            name,
+            url,
+            preview_path
+        )
+        VALUES (?, ?, ?)
+        """, (name, url, preview_path))
 
         gif_id = cursor.lastrowid
 
@@ -144,6 +151,7 @@ def add_gif(name, path, collections, tags):
 
 # Get all GIFs
 def get_all_gifs():
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -151,7 +159,8 @@ def get_all_gifs():
     SELECT
         gifs.id,
         gifs.name,
-        gifs.path,
+        gifs.url,
+        gifs.preview_path,
         GROUP_CONCAT(DISTINCT collections.name),
         GROUP_CONCAT(DISTINCT tags.name)
 
@@ -224,6 +233,7 @@ def search_collection(collection):
 
 # Delete GIF
 def delete_gif(gif_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -249,6 +259,7 @@ def delete_gif(gif_id):
 
 # Get GIF by ID
 def get_gif_by_id(gif_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -266,6 +277,7 @@ def get_gif_by_id(gif_id):
 
 # Create a new collection
 def create_collection(name):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -297,16 +309,15 @@ def get_all_collections():
 
 # Delete collection
 def delete_collection(collection_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Remove GIF links first
     cursor.execute("""
     DELETE FROM gif_collections
     WHERE collection_id = ?
     """, (collection_id,))
 
-    # Remove collection
     cursor.execute("""
     DELETE FROM collections
     WHERE id = ?
@@ -317,6 +328,7 @@ def delete_collection(collection_id):
 
 # Get collection by ID
 def get_collection_by_id(collection_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -334,6 +346,7 @@ def get_collection_by_id(collection_id):
 
 # Update GIF name
 def update_gif_name(gif_id, name):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -348,6 +361,7 @@ def update_gif_name(gif_id, name):
 
 # Remove all collections from GIF
 def remove_gif_collections(gif_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -359,9 +373,9 @@ def remove_gif_collections(gif_id):
     conn.commit()
     conn.close()
 
-
 # Remove all tags from GIF
 def remove_gif_tags(gif_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -375,6 +389,7 @@ def remove_gif_tags(gif_id):
 
 # Add GIF to collection
 def add_gif_collection(gif_id, collection_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -389,6 +404,7 @@ def add_gif_collection(gif_id, collection_id):
 
 # Add GIF tag
 def add_gif_tag(gif_id, tag_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -403,6 +419,7 @@ def add_gif_tag(gif_id, tag_id):
 
 # Get GIF details with collections and tags
 def get_gif_full_details(gif_id):
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -410,7 +427,8 @@ def get_gif_full_details(gif_id):
     SELECT
         gifs.id,
         gifs.name,
-        gifs.path
+        gifs.url,
+        gifs.preview_path
     FROM gifs
     WHERE gifs.id = ?
     """, (gif_id,))
@@ -453,7 +471,8 @@ def get_gif_full_details(gif_id):
     return {
         "id": gif[0],
         "name": gif[1],
-        "path": gif[2],
+        "url": gif[2],
+        "preview_path": gif[3],
         "collections": collections,
         "tags": tags
     }
