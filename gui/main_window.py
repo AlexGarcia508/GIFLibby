@@ -5,9 +5,17 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFrame,
     QLineEdit,
+    QScrollArea,
+    QGridLayout,
     QLabel
 )
+
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PySide6.QtMultimediaWidgets import QVideoWidget
+from PySide6.QtCore import QUrl
+
 from gif_manager import list_gifs
+
 
 # Main application window
 class MainWindow(QWidget):
@@ -19,61 +27,54 @@ class MainWindow(QWidget):
         self.setWindowTitle("GIFLibby")
         self.resize(800, 600)
 
+        # Keep players alive
+        self.players = []
+
         # Create interface
         self.create_ui()
 
     # Create the window layout
     def create_ui(self):
-
-        # Main vertical layout
         main_layout = QVBoxLayout()
 
-        # Remove default padding around the layout
+        # Remove default padding and spacing
         main_layout.setContentsMargins(0, 0, 0, 0)
-
-        # Remove extra spacing
         main_layout.setSpacing(0)
 
         # Create top banner
-        banner = self.create_banner()
-
-        # Add banner to window
-        main_layout.addLayout(banner)
-
-        # Create content area
-        self.create_content()
-
-        # Add content below banner
-        main_layout.addWidget(
-            self.content_area
+        main_layout.addLayout(
+            self.create_banner()
         )
 
-        # Load GIFs when app starts
+        # Create GIF area
+        self.create_content()
+
+        # Add GIF area below banner
+        main_layout.addWidget(
+            self.scroll_area
+        )
+
+        # Load GIFs on startup
         self.show_gifs()
 
-        # Apply layout
         self.setLayout(main_layout)
 
     # Create the top button banner
     def create_banner(self):
-
         banner = QHBoxLayout()
 
-        # Remove padding around banner
         banner.setContentsMargins(5, 0, 5, 5)
-
-        # Keep items close together
         banner.setSpacing(3)
 
-        # Left side buttons
+        # Left buttons
         add_button = QPushButton("Add GIF")
         view_button = QPushButton("View GIFs")
         collection_button = QPushButton("Collections")
 
-        # Right side buttons
+        # Right button
         settings_button = QPushButton("Settings")
 
-        # Make buttons smaller
+        # Button size
         for button in [
             add_button,
             view_button,
@@ -85,79 +86,184 @@ class MainWindow(QWidget):
 
         # Search bar
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText(
-            "Search GIFs..."
-        )
+        self.search_bar.setPlaceholderText("Search GIFs...")
         self.search_bar.setFixedHeight(20)
         self.search_bar.setFixedWidth(200)
 
-        # View GIFs button loads GIFs
+        # Reload GIFs
         view_button.clicked.connect(
             self.show_gifs
         )
 
-        # Add left buttons
+        # Left side
         banner.addWidget(add_button)
-        banner.addWidget(
-            self.create_divider()
-        )
-
+        banner.addWidget(self.create_divider())
         banner.addWidget(view_button)
-        banner.addWidget(
-            self.create_divider()
-        )
-
+        banner.addWidget(self.create_divider())
         banner.addWidget(collection_button)
 
-        # Push right-side items to the right
+        # Push right side
         banner.addStretch()
 
-        # Add search and settings
-        banner.addWidget(
-            self.search_bar
-        )
-
-        banner.addWidget(
-            self.create_divider()
-        )
-
+        # Right side
+        banner.addWidget(self.search_bar)
+        banner.addWidget(self.create_divider())
         banner.addWidget(settings_button)
 
         return banner
 
-    # Create main content area
+    # Create scrollable GIF grid
     def create_content(self):
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
 
-        self.content_area = QLabel()
+        self.gif_container = QWidget()
 
-        self.content_area.setText(
-            "GIFs will appear here"
+        self.gif_grid = QGridLayout()
+
+        self.gif_container.setLayout(
+            self.gif_grid
         )
 
-    # Display GIF list
+        self.scroll_area.setWidget(
+            self.gif_container
+        )
+
+    # Load GIFs into grid
     def show_gifs(self):
+
+        # Clear old cards
+        while self.gif_grid.count():
+
+            item = self.gif_grid.takeAt(0)
+
+            if item.widget():
+                item.widget().deleteLater()
+
+        self.players.clear()
 
         gifs = list_gifs()
 
         if not gifs:
-            self.content_area.setText(
-                "No GIFs found."
+
+            self.gif_grid.addWidget(
+                QLabel("No GIFs found."),
+                0,
+                0
             )
+
             return
 
-        text = ""
+        row = 0
+        column = 0
 
+        # Create GIF cards
         for gif in gifs:
-            text += (
-                f"ID: {gif[0]}\n"
-                f"Name: {gif[1]}\n"
-                f"Path: {gif[2]}\n"
-                f"----------------\n"
+
+            card = self.create_gif_card(
+                gif
             )
 
-        self.content_area.setText(text)
+            self.gif_grid.addWidget(
+                card,
+                row,
+                column
+            )
 
-    # Create vertical divider line
+            column += 1
+
+            # Four GIFs per row
+            if column >= 4:
+
+                column = 0
+                row += 1
+
+    # Create individual GIF card
+    def create_gif_card(self, gif):
+
+        card = QWidget()
+
+        layout = QVBoxLayout()
+
+        layout.setSpacing(3)
+
+        # Video display
+        video = QVideoWidget()
+
+        video.setFixedSize(
+            150,
+            120
+        )
+
+        # Video player
+        player = QMediaPlayer()
+
+        audio = QAudioOutput()
+
+        # Mute preview
+        audio.setVolume(0)
+
+        player.setAudioOutput(
+            audio
+        )
+
+        player.setVideoOutput(
+            video
+        )
+
+        # Load MP4 preview
+        player.setSource(
+            QUrl.fromLocalFile(
+                gif[3]
+            )
+        )
+
+        # Loop video
+        player.mediaStatusChanged.connect(
+            lambda status: self.loop_video(
+                player,
+                status
+            )
+        )
+
+        player.play()
+
+        # Prevent player cleanup
+        self.players.append(
+            player
+        )
+
+        # GIF name
+        name = QLabel(
+            gif[1]
+        )
+
+        layout.addWidget(
+            video
+        )
+
+        layout.addWidget(
+            name
+        )
+
+        card.setLayout(
+            layout
+        )
+
+        return card
+
+    # Restart video when finished
+    def loop_video(self, player, status):
+
+        if status == QMediaPlayer.MediaStatus.EndOfMedia:
+
+            player.setPosition(
+                0
+            )
+
+            player.play()
+
+    # Create vertical divider
     def create_divider(self):
 
         divider = QFrame()
