@@ -4,8 +4,10 @@ import win32gui
 import win32con
 import win32process
 import win32api
+import psutil
 import time
 
+# Finds the real Discord window
 # Finds the real Discord window
 def find_discord():
     discord_hwnd = None
@@ -14,24 +16,37 @@ def find_discord():
 
         nonlocal discord_hwnd
 
-        title = win32gui.GetWindowText(hwnd)
+        if not win32gui.IsWindowVisible(hwnd):
+            return
 
-        # Debug: show Discord-related windows
-        if "Discord" in title:
+        # Get process ID from window
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+
+        try:
+            process = psutil.Process(pid)
+            exe = process.name().lower()
+
+            title = win32gui.GetWindowText(hwnd)
+
+            # Debug: show every window process + title
             print(
-                "FOUND WINDOW:",
+                "PROCESS:",
+                exe,
+                "| TITLE:",
                 title,
                 "| HWND:",
                 hwnd
             )
 
-        # Pick real Discord window
-        if (
-            "Discord" in title
-            and "Overlay" not in title
-            and win32gui.IsWindowVisible(hwnd)
-        ):
-            discord_hwnd = hwnd
+            # Pick real Discord app
+            if (
+                exe == "discord.exe"
+                and "Overlay" not in title
+            ):
+                discord_hwnd = hwnd
+
+        except psutil.NoSuchProcess:
+            pass
 
     win32gui.EnumWindows(callback, None)
 
@@ -47,12 +62,11 @@ def focus_discord():
 
         return False
 
-    print("SELECTED:",win32gui.GetWindowText(discord_hwnd))
+    print("SELECTED:", win32gui.GetWindowText(discord_hwnd))
 
     before = win32gui.GetForegroundWindow()
 
     print("Before:", win32gui.GetWindowText(before))
-
 
     try:
 
@@ -112,7 +126,7 @@ def focus_discord():
 
         after = win32gui.GetForegroundWindow()
 
-        print("After:",win32gui.GetWindowText(after))
+        print("After:", win32gui.GetWindowText(after))
 
         if after == discord_hwnd:
 
@@ -125,7 +139,6 @@ def focus_discord():
         return False
 
     except Exception as e:
-
         print("Focus error:", e)
 
         return False
@@ -134,19 +147,16 @@ def focus_discord():
 def send_gif(url):
     if focus_discord():
 
-        # Copy URL
         pyperclip.copy(url)
 
         time.sleep(0.1)
 
         print("Pasting...")
 
-        # Paste URL
         pyautogui.hotkey("ctrl", "v")
 
         time.sleep(0.2)
 
-        # Send
         pyautogui.press("enter")
 
         print("GIF sent!")
