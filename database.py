@@ -90,41 +90,57 @@ def add_gif(name, path, collections, tags):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-    INSERT INTO gifs (name, path)
-    VALUES (?, ?)
-    """, (name, path))
+    try:
 
-    gif_id = cursor.lastrowid
-
-    # Add collections
-    for collection in collections:
-        collection_id = get_or_create_collection(
-            cursor,
-            collection
-        )
-
+        # Add GIF
         cursor.execute("""
-        INSERT OR IGNORE INTO gif_collections
-        (gif_id, collection_id)
+        INSERT INTO gifs (name, path)
         VALUES (?, ?)
-        """, (gif_id, collection_id))
+        """, (name, path))
 
-    # Add tags
-    for tag in tags:
-        tag_id = get_or_create_tag(
-            cursor,
-            tag
-        )
+        gif_id = cursor.lastrowid
 
-        cursor.execute("""
-        INSERT OR IGNORE INTO gif_tags
-        (gif_id, tag_id)
-        VALUES (?, ?)
-        """, (gif_id, tag_id))
+        # Add collections
+        for collection in collections:
 
-    conn.commit()
-    conn.close()
+            collection_id = get_or_create_collection(
+                cursor,
+                collection
+            )
+
+            cursor.execute("""
+            INSERT OR IGNORE INTO gif_collections
+            (gif_id, collection_id)
+            VALUES (?, ?)
+            """, (gif_id, collection_id))
+
+        # Add tags
+        for tag in tags:
+
+            tag_id = get_or_create_tag(
+                cursor,
+                tag
+            )
+
+            cursor.execute("""
+            INSERT OR IGNORE INTO gif_tags
+            (gif_id, tag_id)
+            VALUES (?, ?)
+            """, (gif_id, tag_id))
+
+        conn.commit()
+
+        return True
+
+    except sqlite3.IntegrityError:
+
+        conn.rollback()
+
+        return False
+
+    finally:
+
+        conn.close()
 
 # Get all GIFs
 def get_all_gifs():
@@ -315,3 +331,72 @@ def get_collection_by_id(collection_id):
     conn.close()
 
     return result
+
+# Update GIF name
+def update_gif_name(gif_id, name):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    UPDATE gifs
+    SET name = ?
+    WHERE id = ?
+    """, (name, gif_id))
+
+    conn.commit()
+    conn.close()
+
+# Remove all collections from GIF
+def remove_gif_collections(gif_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    DELETE FROM gif_collections
+    WHERE gif_id = ?
+    """, (gif_id,))
+
+    conn.commit()
+    conn.close()
+
+
+# Remove all tags from GIF
+def remove_gif_tags(gif_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    DELETE FROM gif_tags
+    WHERE gif_id = ?
+    """, (gif_id,))
+
+    conn.commit()
+    conn.close()
+
+# Add GIF to collection
+def add_gif_collection(gif_id, collection_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT OR IGNORE INTO gif_collections
+    (gif_id, collection_id)
+    VALUES (?, ?)
+    """, (gif_id, collection_id))
+
+    conn.commit()
+    conn.close()
+
+# Add GIF tag
+def add_gif_tag(gif_id, tag_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT OR IGNORE INTO gif_tags
+    (gif_id, tag_id)
+    VALUES (?, ?)
+    """, (gif_id, tag_id))
+
+    conn.commit()
+    conn.close()

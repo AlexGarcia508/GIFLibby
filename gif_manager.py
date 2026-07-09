@@ -9,7 +9,14 @@ from database import (
     create_collection,
     get_all_collections,
     delete_collection,
-    get_collection_by_id
+    get_collection_by_id,
+    update_gif_name,
+    remove_gif_collections,
+    remove_gif_tags,
+    add_gif_collection,
+    add_gif_tag,
+    get_or_create_collection,
+    get_or_create_tag
 )
 
 # Add a new GIF
@@ -23,6 +30,7 @@ def create_gif(name, path, collection_ids, tags):
         )
 
         if collection:
+
             collections.append(
                 collection[1]
             )
@@ -33,7 +41,7 @@ def create_gif(name, path, collection_ids, tags):
         if item.strip()
     ]
 
-    add_gif(
+    return add_gif(
         name,
         path,
         collections,
@@ -43,6 +51,10 @@ def create_gif(name, path, collection_ids, tags):
 # Get all GIFs
 def list_gifs():
     return get_all_gifs()
+
+# Get GIF details
+def get_gif_details(gif_id):
+    return get_gif_by_id(gif_id)
 
 # Find GIFs by tag
 def find_by_tag(tag):
@@ -82,3 +94,37 @@ def list_collections():
 # Remove collection
 def remove_collection(collection_id):
     delete_collection(collection_id)
+
+# Edit GIF
+def edit_gif(gif_id, name, collection_ids, tags):
+    update_gif_name(
+        gif_id,
+        name
+    )
+
+    # Replace collections
+    remove_gif_collections(
+        gif_id
+    )
+
+    for collection_id in collection_ids:
+
+        add_gif_collection(
+            gif_id,
+            collection_id
+        )
+
+    # Replace tags
+    remove_gif_tags(
+        gif_id
+    )
+
+    for tag in tags:
+        tag_id = get_or_create_tag(
+            tag
+        )
+
+        add_gif_tag(
+            gif_id,
+            tag_id
+        )
