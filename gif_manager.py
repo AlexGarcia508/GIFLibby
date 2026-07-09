@@ -16,7 +16,8 @@ from database import (
     add_gif_collection,
     add_gif_tag,
     get_or_create_collection,
-    get_or_create_tag
+    get_or_create_tag,
+    get_gif_full_details
 )
 
 # Add a new GIF
@@ -120,11 +121,16 @@ def edit_gif(gif_id, name, collection_ids, tags):
     )
 
     for tag in tags:
-        tag_id = get_or_create_tag(
-            tag
-        )
+        tag_id = get_or_create_tag(tag)
 
         add_gif_tag(
             gif_id,
             tag_id
         )
+
+# Get complete GIF details
+def get_full_gif_details(gif_id):
+
+    return get_gif_full_details(
+        gif_id
+    )

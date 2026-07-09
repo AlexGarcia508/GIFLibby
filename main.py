@@ -12,7 +12,8 @@ from gif_manager import (
     list_collections,
     remove_collection,
     edit_gif,
-    get_gif_details
+    get_gif_details,
+    get_full_gif_details
 )
 
 # Create database when program starts
@@ -20,41 +21,34 @@ create_database()
 
 # Main program loop
 while True:
-
     print("\n====================")
     print("GIFLibby")
     print("====================")
     print("1. Add GIF")
     print("2. View All GIFs")
-    print("3. Search Tags")
-    print("4. View Collection")
-    print("5. Manage Collections")
-    print("6. Edit GIF")
-    print("7. Delete GIF")
-    print("8. Send GIF to Discord")
-    print("9. Exit")
+    print("3. View GIF Details")
+    print("4. Search Tags")
+    print("5. View Collection")
+    print("6. Manage Collections")
+    print("7. Edit GIF")
+    print("8. Delete GIF")
+    print("9. Send GIF to Discord")
+    print("10. Exit")
 
     choice = input("\nChoice: ")
 
     # Add GIF
     if choice == "1":
-
         name = input("Name: ")
         path = input("Path/URL: ")
 
         print("\nAvailable Collections:")
-
         collections = list_collections()
 
         for collection in collections:
+            print(f"{collection[0]}. {collection[1]}")
 
-            print(
-                f"{collection[0]}. {collection[1]}"
-            )
-
-        selected = input(
-            "\nChoose collections (example: 1,3): "
-        )
+        selected = input("\nChoose collections (example: 1,3): ")
 
         collection_ids = [
             item.strip()
@@ -62,9 +56,7 @@ while True:
             if item.strip()
         ]
 
-        tags = input(
-            "Tags (example: cute,happy): "
-        ).lower()
+        tags = input("Tags (example: cute,happy): ").lower()
 
         create_gif(
             name,
@@ -77,27 +69,54 @@ while True:
 
     # View all GIFs
     elif choice == "2":
-
         gifs = list_gifs()
 
         print()
 
         if gifs:
-
             for gif in gifs:
-
                 print(f"ID: {gif[0]}")
                 print(f"Name: {gif[1]}")
                 print(f"Path: {gif[2]}")
                 print("-" * 30)
-
         else:
-
             print("No GIFs found.")
 
-    # Search tags
+    # View GIF details
     elif choice == "3":
+        gif_id = input("GIF ID: ")
 
+        gif = get_full_gif_details(
+            gif_id
+        )
+
+        if gif:
+            print("\nGIF Details")
+            print("-" * 30)
+            print(f"ID: {gif['id']}")
+            print(f"Name: {gif['name']}")
+            print(f"Path: {gif['path']}")
+
+            print("\nCollections:")
+
+            if gif["collections"]:
+                for collection in gif["collections"]:
+                    print(f"- {collection}")
+            else:
+                print("None")
+
+            print("\nTags:")
+
+            if gif["tags"]:
+                for tag in gif["tags"]:
+                    print(f"- {tag}")
+            else:
+                print("None")
+        else:
+            print("GIF not found.")
+
+    # Search tags
+    elif choice == "4":
         tag = input("Tag: ").lower()
 
         results = find_by_tag(tag)
@@ -105,25 +124,17 @@ while True:
         print()
 
         if results:
-
             for gif in results:
-
                 print(f"ID: {gif[0]}")
                 print(f"Name: {gif[1]}")
                 print(f"Path: {gif[2]}")
                 print("-" * 30)
-
         else:
-
             print("Tag not found.")
 
     # Search collection
-    elif choice == "4":
-
-        collection = input(
-            "Collection: "
-        ).lower()
-
+    elif choice == "5":
+        collection = input("Collection: ").lower()
 
         results = find_by_collection(
             collection
@@ -132,20 +143,16 @@ while True:
         print()
 
         if results:
-
             for gif in results:
-
                 print(f"ID: {gif[0]}")
                 print(f"Name: {gif[1]}")
                 print(f"Path: {gif[2]}")
                 print("-" * 30)
-
         else:
-
             print("Collection not found.")
 
     # Manage collections
-    elif choice == "5":
+    elif choice == "6":
         print("\n1. Create Collection")
         print("2. View Collections")
         print("3. Delete Collection")
@@ -154,9 +161,7 @@ while True:
         option = input("\nChoice: ")
 
         if option == "1":
-            name = input(
-                "Collection name: "
-            )
+            name = input("Collection name: ")
 
             create_new_collection(
                 name
@@ -170,13 +175,11 @@ while True:
             print()
 
             for collection in collections:
-
                 print(
                     f"ID: {collection[0]} | Name: {collection[1]}"
                 )
 
         elif option == "3":
-
             collection_id = input(
                 "Collection ID to delete: "
             )
@@ -188,47 +191,32 @@ while True:
             print("Collection deleted.")
 
         elif option == "4":
-
             continue
 
         else:
-
             print("Invalid choice.")
 
     # Edit GIF
-    elif choice == "6":
-
-        gif_id = input(
-            "GIF ID to edit: "
-        )
+    elif choice == "7":
+        gif_id = input("GIF ID to edit: ")
 
         gif = get_gif_details(
             gif_id
         )
 
         if gif is None:
-
             print("GIF not found.")
 
         else:
-
-            name = input(
-                "New name: "
-            )
+            name = input("New name: ")
 
             print("\nAvailable Collections:")
-
             collections = list_collections()
 
             for collection in collections:
+                print(f"{collection[0]}. {collection[1]}")
 
-                print(
-                    f"{collection[0]}. {collection[1]}"
-                )
-
-            selected = input(
-                "\nChoose collections (example: 1,3): "
-            )
+            selected = input("\nChoose collections (example: 1,3): ")
 
             collection_ids = [
                 item.strip()
@@ -236,9 +224,7 @@ while True:
                 if item.strip()
             ]
 
-            tags = input(
-                "Tags (example: cute,happy): "
-            )
+            tags = input("Tags (example: cute,happy): ")
 
             tag_list = [
                 item.strip().lower()
@@ -256,11 +242,8 @@ while True:
             print("GIF updated.")
 
     # Delete GIF
-    elif choice == "7":
-
-        gif_id = input(
-            "GIF ID to delete: "
-        )
+    elif choice == "8":
+        gif_id = input("GIF ID to delete: ")
 
         remove_gif(
             gif_id
@@ -269,11 +252,8 @@ while True:
         print("GIF deleted.")
 
     # Send GIF to Discord
-    elif choice == "8":
-
-        gif_id = input(
-            "GIF ID to send: "
-        )
+    elif choice == "9":
+        gif_id = input("GIF ID to send: ")
 
         print("Sending...")
 
@@ -284,11 +264,9 @@ while True:
         )
 
     # Exit
-    elif choice == "9":
+    elif choice == "10":
         print("Goodbye.")
-
         break
 
     else:
-
         print("Invalid choice.")

@@ -400,3 +400,60 @@ def add_gif_tag(gif_id, tag_id):
 
     conn.commit()
     conn.close()
+
+# Get GIF details with collections and tags
+def get_gif_full_details(gif_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT
+        gifs.id,
+        gifs.name,
+        gifs.path
+    FROM gifs
+    WHERE gifs.id = ?
+    """, (gif_id,))
+
+    gif = cursor.fetchone()
+
+    if gif is None:
+
+        conn.close()
+        return None
+
+    cursor.execute("""
+    SELECT collections.name
+    FROM collections
+    JOIN gif_collections
+    ON collections.id = gif_collections.collection_id
+    WHERE gif_collections.gif_id = ?
+    """, (gif_id,))
+
+    collections = [
+        row[0]
+        for row in cursor.fetchall()
+    ]
+
+    cursor.execute("""
+    SELECT tags.name
+    FROM tags
+    JOIN gif_tags
+    ON tags.id = gif_tags.tag_id
+    WHERE gif_tags.gif_id = ?
+    """, (gif_id,))
+
+    tags = [
+        row[0]
+        for row in cursor.fetchall()
+    ]
+
+    conn.close()
+
+    return {
+        "id": gif[0],
+        "name": gif[1],
+        "path": gif[2],
+        "collections": collections,
+        "tags": tags
+    }
