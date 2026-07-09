@@ -7,7 +7,14 @@ GIF_URL = "https://tenor.com/view/cat-standing-cat-amused-cat-gif-25176042"
 
 def focus_discord():
     windows = gw.getWindowsWithTitle("Discord")
-    #print("windows =" + windows)
+    # print("windows =" + windows)
+
+    # NEW: remove Discord overlay/helper windows
+    windows = [
+        window
+        for window in windows
+        if "Overlay" not in window.title
+    ]
 
     for window in windows:
         print("TITLE:", window.title)
@@ -22,21 +29,28 @@ def focus_discord():
         return False
 
     discord = windows[0]
-    #print("discord =" + discord)
+    # print("discord =" + discord)
 
     try:
         # Restore if minimized
         if discord.isMinimized:
             discord.restore()
 
-        print(gw.getActiveWindow().title)
+        # NEW: before focus check
+        print("Before:", gw.getActiveWindow().title)
+
         # Move Discord to front
         discord.activate()
-        #time.sleep(0.3)
+
+        time.sleep(0.5)
+
+        # NEW: after focus check
+        print("After:", gw.getActiveWindow().title)
 
         return True
 
     except Exception as e:
+
         print("Discord focus failed:", e)
         return False
 
@@ -44,12 +58,17 @@ def send_gif(url):
     pyperclip.copy(url)
 
     if focus_discord():
+
         pyautogui.hotkey("ctrl", "v")
+
         pyautogui.press("enter")
+
         print("GIF sent!")
 
     else:
+
         print("Could not send GIF.")
 
 if __name__ == "__main__":
+
     send_gif(GIF_URL)
