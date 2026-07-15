@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
-from PySide6.QtCore import QUrl, Qt
+from PySide6.QtCore import QUrl, Qt, QTimer
 
 from gif_manager import list_gifs
 
@@ -49,8 +49,11 @@ class MainWindow(QWidget):
         # Add GIF area below banner
         main_layout.addWidget(self.scroll_area)
 
-        # Load GIFs on startup
-        self.show_gifs()
+        # Load GIFs after the window finishes rendering
+        QTimer.singleShot(
+            100,
+            self.show_gifs
+        )
 
         self.setLayout(main_layout)
 
