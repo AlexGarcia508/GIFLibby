@@ -1,5 +1,8 @@
 from discord_sender import send_gif
+import sqlite3
+
 from database import (
+    DATABASE_NAME,
     add_gif,
     get_all_gifs,
     search_tags,
@@ -15,26 +18,18 @@ from database import (
     remove_gif_tags,
     add_gif_collection,
     add_gif_tag,
-    get_or_create_tag,
     get_gif_full_details
 )
 
 # Add a new GIF
 def create_gif(name, url, preview_path, collection_ids, tags):
-
     collections = []
 
     for collection_id in collection_ids:
-
-        collection = get_collection_by_id(
-            collection_id
-        )
+        collection = get_collection_by_id(collection_id)
 
         if collection:
-
-            collections.append(
-                collection[1]
-            )
+            collections.append(collection[1])
 
     tags = [
         item.strip().lower()
@@ -72,18 +67,15 @@ def remove_gif(gif_id):
 
 # Send GIF to Discord
 def send_gif_by_id(gif_id):
-
     gif = get_gif_by_id(gif_id)
 
     if gif is None:
         print("GIF not found.")
         return
 
-    url = gif[2]
-
     print(f"Sending {gif[1]}...")
 
-    send_gif(url)
+    send_gif(gif[2])
 
 # Create collection
 def create_new_collection(name):
@@ -99,43 +91,51 @@ def remove_collection(collection_id):
 
 # Edit GIF
 def edit_gif(gif_id, name, collection_ids, tags):
-
     update_gif_name(
         gif_id,
         name
     )
 
     # Replace collections
-    remove_gif_collections(
-        gif_id
-    )
+    remove_gif_collections(gif_id)
 
     for collection_id in collection_ids:
-
         add_gif_collection(
             gif_id,
             collection_id
         )
 
     # Replace tags
-    remove_gif_tags(
-        gif_id
-    )
+    remove_gif_tags(gif_id)
+
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
 
     for tag in tags:
+        tag = tag.lower()
 
-        tag_id = get_or_create_tag(
-            tag
-        )
+        cursor.execute("""
+        INSERT OR IGNORE INTO tags (name)
+        VALUES (?)
+        """, (tag,))
 
-        add_gif_tag(
-            gif_id,
-            tag_id
-        )
+        cursor.execute("""
+        SELECT id
+        FROM tags
+        WHERE name = ?
+        """, (tag,))
+
+        tag_id = cursor.fetchone()[0]
+
+        cursor.execute("""
+        INSERT OR IGNORE INTO gif_tags
+        (gif_id, tag_id)
+        VALUES (?, ?)
+        """, (gif_id, tag_id))
+
+    conn.commit()
+    conn.close()
 
 # Get complete GIF details
 def get_full_gif_details(gif_id):
-
-    return get_gif_full_details(
-        gif_id
-    )
+    return get_gif_full_details(gif_id)
