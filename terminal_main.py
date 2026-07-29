@@ -1,6 +1,5 @@
 from database import create_database
 import time
-from tkinter import Tk, filedialog
 
 from gif_manager import (
     create_gif,
@@ -19,31 +18,6 @@ from gif_manager import (
 
 # Create database when program starts
 create_database()
-
-# Open file picker for preview selection
-def select_preview_file():
-
-    root = Tk()
-
-    root.attributes("-topmost", True)
-
-    root.withdraw()
-
-    print("Opening file picker...")
-
-    file_path = filedialog.askopenfilename(
-        title="Select MP4 Preview",
-        filetypes=[
-            ("MP4 Files", "*.mp4"),
-            ("All Files", "*.*")
-        ]
-    )
-
-    root.destroy()
-
-    print("Selected:", file_path)
-
-    return file_path
 
 # Main program loop
 while True:
@@ -67,14 +41,11 @@ while True:
     if choice == "1":
 
         name = input("Name: ")
-        url = input("GIF URL: ")
+        gif_url = input("GIF URL: ")
+        preview_url = input("Preview MP4 URL: ")
 
-        print("Select MP4 preview file...")
-
-        preview_path = select_preview_file()
-
-        if not preview_path:
-            print("No preview selected.")
+        if not preview_url:
+            print("No preview URL entered.")
             continue
 
         print("\nAvailable Collections:")
@@ -95,8 +66,8 @@ while True:
 
         create_gif(
             name,
-            url,
-            preview_path,
+            gif_url,
+            preview_url,
             collection_ids,
             tags
         )
@@ -115,8 +86,8 @@ while True:
             for gif in gifs:
                 print(f"ID: {gif[0]}")
                 print(f"Name: {gif[1]}")
-                print(f"URL: {gif[2]}")
-                print(f"Preview: {gif[3]}")
+                print(f"GIF URL: {gif[2]}")
+                print(f"Preview URL: {gif[3]}")
                 print("-" * 30)
 
         else:
@@ -138,8 +109,8 @@ while True:
             print("-" * 30)
             print(f"ID: {gif['id']}")
             print(f"Name: {gif['name']}")
-            print(f"URL: {gif['url']}")
-            print(f"Preview: {gif['preview_path']}")
+            print(f"GIF URL: {gif['gif_url']}")
+            print(f"Preview URL: {gif['preview_url']}")
 
             print("\nCollections:")
 
@@ -181,8 +152,8 @@ while True:
             for gif in results:
                 print(f"ID: {gif[0]}")
                 print(f"Name: {gif[1]}")
-                print(f"URL: {gif[2]}")
-                print(f"Preview: {gif[3]}")
+                print(f"GIF URL: {gif[2]}")
+                print(f"Preview URL: {gif[3]}")
                 print("-" * 30)
 
         else:
@@ -205,8 +176,8 @@ while True:
             for gif in results:
                 print(f"ID: {gif[0]}")
                 print(f"Name: {gif[1]}")
-                print(f"URL: {gif[2]}")
-                print(f"Preview: {gif[3]}")
+                print(f"GIF URL: {gif[2]}")
+                print(f"Preview URL: {gif[3]}")
                 print("-" * 30)
 
         else:

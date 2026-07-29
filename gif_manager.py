@@ -22,7 +22,7 @@ from database import (
 )
 
 # Add a new GIF
-def create_gif(name, url, preview_path, collection_ids, tags):
+def create_gif(name, gif_url, preview_url, collection_ids, tags):
     collections = []
 
     for collection_id in collection_ids:
@@ -39,8 +39,8 @@ def create_gif(name, url, preview_path, collection_ids, tags):
 
     return add_gif(
         name,
-        url,
-        preview_path,
+        gif_url,
+        preview_url,
         collections,
         tags
     )

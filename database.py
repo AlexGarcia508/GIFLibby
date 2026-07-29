@@ -15,8 +15,8 @@ def create_database():
     CREATE TABLE IF NOT EXISTS gifs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        url TEXT NOT NULL UNIQUE,
-        preview_path TEXT NOT NULL
+        gif_url TEXT NOT NULL UNIQUE,
+        preview_url TEXT NOT NULL
     )
     """)
 
@@ -88,7 +88,7 @@ def get_or_create_tag(cursor, name):
     return cursor.fetchone()[0]
 
 # Add GIF
-def add_gif(name, url, preview_path, collections, tags):
+def add_gif(name, gif_url, preview_url, collections, tags):
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -99,11 +99,11 @@ def add_gif(name, url, preview_path, collections, tags):
         cursor.execute("""
         INSERT INTO gifs (
             name,
-            url,
-            preview_path
+            gif_url,
+            preview_url
         )
         VALUES (?, ?, ?)
-        """, (name, url, preview_path))
+        """, (name, gif_url, preview_url))
 
         gif_id = cursor.lastrowid
 
@@ -159,8 +159,8 @@ def get_all_gifs():
     SELECT
         gifs.id,
         gifs.name,
-        gifs.url,
-        gifs.preview_path,
+        gifs.gif_url,
+        gifs.preview_url,
         GROUP_CONCAT(DISTINCT collections.name),
         GROUP_CONCAT(DISTINCT tags.name)
 
@@ -427,8 +427,8 @@ def get_gif_full_details(gif_id):
     SELECT
         gifs.id,
         gifs.name,
-        gifs.url,
-        gifs.preview_path
+        gifs.gif_url,
+        gifs.preview_url
     FROM gifs
     WHERE gifs.id = ?
     """, (gif_id,))
@@ -471,8 +471,8 @@ def get_gif_full_details(gif_id):
     return {
         "id": gif[0],
         "name": gif[1],
-        "url": gif[2],
-        "preview_path": gif[3],
+        "gif_url": gif[2],
+        "preview_url": gif[3],
         "collections": collections,
         "tags": tags
     }

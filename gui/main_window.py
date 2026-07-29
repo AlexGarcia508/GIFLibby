@@ -19,7 +19,7 @@ from gif_manager import list_gifs
 
 # Video preview widget using QVideoSink
 class VideoPreview(QWidget):
-    def __init__(self, path):
+    def __init__(self, preview_url):
         super().__init__()
 
         self.label = QLabel()
@@ -51,9 +51,13 @@ class VideoPreview(QWidget):
             self.loop_video
         )
 
-        self.player.setSource(
-            QUrl.fromLocalFile(path)
-        )
+        # Support remote MP4 URLs and local MP4 files
+        if preview_url.startswith("http"):
+            source = QUrl(preview_url)
+        else:
+            source = QUrl.fromLocalFile(preview_url)
+
+        self.player.setSource(source)
 
         self.player.play()
 
@@ -227,6 +231,7 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         layout.setSpacing(0)
 
+        # gif[3] is now preview_url
         preview = VideoPreview(gif[3])
 
         layout.addWidget(preview)
