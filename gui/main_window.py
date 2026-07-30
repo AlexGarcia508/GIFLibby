@@ -15,6 +15,7 @@ from PySide6.QtCore import QUrl, Qt, QTimer
 from PySide6.QtGui import QPixmap
 
 from gif_manager import list_gifs
+from gui.add_gif_dialog import AddGifDialog
 
 
 # Video preview widget using QVideoSink
@@ -51,7 +52,6 @@ class VideoPreview(QWidget):
             self.loop_video
         )
 
-        # Support remote MP4 URLs and local MP4 files
         if preview_url.startswith("http"):
             source = QUrl(preview_url)
         else:
@@ -107,6 +107,13 @@ class MainWindow(QWidget):
         # Create interface
         self.create_ui()
 
+    # Open add GIF dialog
+    def open_add_dialog(self):
+        dialog = AddGifDialog(self)
+
+        if dialog.exec():
+            self.show_gifs()
+
     # Create the window layout
     def create_ui(self):
         main_layout = QVBoxLayout()
@@ -135,6 +142,8 @@ class MainWindow(QWidget):
         banner.setSpacing(3)
 
         add_button = QPushButton("Add GIF")
+        add_button.clicked.connect(self.open_add_dialog)
+
         view_button = QPushButton("View GIFs")
         collection_button = QPushButton("Collections")
 
@@ -231,7 +240,7 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         layout.setSpacing(0)
 
-        # gif[3] is now preview_url
+        # gif[3] is preview_url
         preview = VideoPreview(gif[3])
 
         layout.addWidget(preview)
