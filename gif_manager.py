@@ -139,3 +139,23 @@ def edit_gif(gif_id, name, collection_ids, tags):
 # Get complete GIF details
 def get_full_gif_details(gif_id):
     return get_gif_full_details(gif_id)
+
+# Get existing tags for suggestions
+def get_tags():
+    conn = sqlite3.connect(DATABASE_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT name
+    FROM tags
+    ORDER BY name
+    """)
+
+    tags = [
+        row[0]
+        for row in cursor.fetchall()
+    ]
+
+    conn.close()
+
+    return tags
