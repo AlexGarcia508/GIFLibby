@@ -16,6 +16,7 @@ from gif_manager import (
 
 from gui.tag_selector import TagSelector
 from gui.collection_selector import CollectionSelector
+from utils.browser_extractor import extract_mp4
 
 
 # Window used for adding new GIFs
@@ -124,22 +125,28 @@ class AddGifDialog(QDialog):
         gif_url = self.gif_url_input.text().strip()
         preview_url = self.preview_url_input.text().strip()
 
-        if not name or not gif_url or not preview_url:
+        if not name or not gif_url:
             QMessageBox.warning(
                 self,
                 "Missing Information",
-                "Name, GIF URL, and Preview URL are required."
+                "Name and GIF URL are required."
             )
-
             return
 
-        collections = (
-            self.collection_selector.get_collections()
-        )
+        # Automatically extract preview if user did not provide one
+        if not preview_url:
+            preview_url = extract_mp4(gif_url)
 
-        tags = (
-            self.tag_selector.get_tags()
-        )
+        if not preview_url:
+            QMessageBox.warning(
+                self,
+                "Preview Error",
+                "Could not find MP4 preview."
+            )
+            return
+
+        collections = self.collection_selector.get_collections()
+        tags = self.tag_selector.get_tags()
 
         create_gif(
             name,
