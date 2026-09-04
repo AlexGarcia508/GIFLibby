@@ -58,7 +58,6 @@ class VideoPreview(QWidget):
             source = QUrl.fromLocalFile(preview_url)
 
         self.player.setSource(source)
-
         self.player.play()
 
     # Convert video frames into QLabel images
@@ -90,6 +89,9 @@ class VideoPreview(QWidget):
     # Stop video when removed
     def stop(self):
         self.player.stop()
+        self.player.setSource(QUrl())
+        self.player.setVideoOutput(None)
+        self.deleteLater()
 
 
 # Main application window
@@ -104,6 +106,9 @@ class MainWindow(QWidget):
         # Keep previews alive
         self.players = []
 
+        # Keep track of the currently displayed GIFs
+        self.displayed_gifs = []
+
         # Create interface
         self.create_ui()
 
@@ -112,7 +117,8 @@ class MainWindow(QWidget):
         dialog = AddGifDialog(self)
 
         if dialog.exec():
-            self.show_gifs()
+            # Force a refresh because a new GIF was added
+            self.show_gifs(force=True)
 
     # Create the window layout
     def create_ui(self):
@@ -146,7 +152,6 @@ class MainWindow(QWidget):
 
         view_button = QPushButton("View GIFs")
         collection_button = QPushButton("Collections")
-
         settings_button = QPushButton("Settings")
 
         for button in [
@@ -188,29 +193,50 @@ class MainWindow(QWidget):
 
         self.gif_grid = QGridLayout()
 
-        self.gif_grid.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.gif_grid.setAlignment(
+            Qt.AlignTop | Qt.AlignLeft
+        )
+
         self.gif_grid.setSpacing(10)
 
-        self.gif_container.setLayout(self.gif_grid)
-        self.scroll_area.setWidget(self.gif_container)
+        self.gif_container.setLayout(
+            self.gif_grid
+        )
+
+        self.scroll_area.setWidget(
+            self.gif_container
+        )
 
     # Load GIFs into grid
-    def show_gifs(self):
+    def show_gifs(self, force=False):
+        gifs = list_gifs()
+
+        # Do nothing if the displayed GIF list has not changed
+        if not force and gifs == self.displayed_gifs:
+            return
+
+        # Remove existing cards
         while self.gif_grid.count():
             item = self.gif_grid.takeAt(0)
 
             if item.widget():
                 item.widget().deleteLater()
 
+        # Stop existing previews
         for preview in self.players:
             preview.stop()
 
         self.players.clear()
 
-        gifs = list_gifs()
+        # Store the new displayed GIF list
+        self.displayed_gifs = gifs
 
         if not gifs:
-            self.gif_grid.addWidget(QLabel("No GIFs found."), 0, 0)
+            self.gif_grid.addWidget(
+                QLabel("No GIFs found."),
+                0,
+                0
+            )
             return
 
         row = 0
