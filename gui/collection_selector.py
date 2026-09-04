@@ -10,30 +10,37 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 
-# Widget for selecting collections
+# Widget for selecting collections with suggestions
 class CollectionSelector(QWidget):
     def __init__(self, collections):
         super().__init__()
 
-        # Store available collections
-        self.all_collections = collections
+        # Store available collection names
+        self.all_collections = [
+            collection[1]
+            for collection in collections
+        ]
 
-        # Store selected collection IDs
-        self.selected_ids = []
+        # Store selected collection names
+        self.selected_collections = []
 
-        # Store buttons
-        self.buttons = []
+        # Maximum selected collections
+        self.max_collections = 10
+
+        # Store widgets for cleanup
+        self.selected_widgets = []
+        self.suggestion_widgets = []
 
         self.create_ui()
 
-        # Show default collections
-        self.update_collections()
+        # Show default suggestions
+        self.update_suggestions()
 
-    # Create collection selector UI
+    # Create UI
     def create_ui(self):
         layout = QVBoxLayout()
 
-        # Remove default layout padding
+        # Remove layout padding
         layout.setContentsMargins(
             0,
             0,
@@ -41,113 +48,297 @@ class CollectionSelector(QWidget):
             0
         )
 
-        # Keep everything aligned left
+        # Align left
         layout.setAlignment(
             Qt.AlignLeft
         )
 
-        # Search input
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText(
-            "Search collections..."
+        # Selected label
+        self.selected_label = QLabel(
+            "Selected Collections:"
         )
 
-        self.search_input.textChanged.connect(
-            self.update_collections
-        )
+        # Selected collection buttons
+        self.selected_layout = QHBoxLayout()
 
-        # Label
-        self.label = QLabel(
-            "Collections:"
-        )
-
-        # Collection button layout
-        self.button_layout = QHBoxLayout()
-
-        # Remove button layout padding
-        self.button_layout.setContentsMargins(
+        self.selected_layout.setContentsMargins(
             0,
             0,
             0,
             0
         )
 
-        self.button_layout.setAlignment(
+        self.selected_layout.setAlignment(
             Qt.AlignLeft
         )
 
-        self.button_layout.setSpacing(5)
+        self.selected_layout.setSpacing(
+            3
+        )
 
-        layout.addWidget(
-            self.label,
-            alignment=Qt.AlignLeft
+        # Counter
+        self.counter_label = QLabel(
+            "0 / 10 collections selected"
+        )
+
+        # Search bar
+        self.search_input = QLineEdit()
+
+        self.search_input.setPlaceholderText(
+            "Search collections..."
+        )
+
+        self.search_input.textChanged.connect(
+            self.update_suggestions
+        )
+
+        # Suggestion label
+        self.suggestion_label = QLabel(
+            "Collection Suggestions:"
+        )
+
+        # Suggestion buttons
+        self.suggestion_layout = QHBoxLayout()
+
+        self.suggestion_layout.setContentsMargins(
+            0,
+            0,
+            0,
+            0
+        )
+
+        self.suggestion_layout.setAlignment(
+            Qt.AlignLeft
+        )
+
+        self.suggestion_layout.setSpacing(
+            3
         )
 
         layout.addWidget(
-            self.search_input,
-            alignment=Qt.AlignLeft
+            self.selected_label
         )
 
         layout.addLayout(
-            self.button_layout
+            self.selected_layout
         )
 
-        self.setLayout(layout)
+        layout.addWidget(
+            self.counter_label
+        )
 
-    # Update visible collections
-    def update_collections(self):
-        # Remove old buttons
-        for button in self.buttons:
-            button.deleteLater()
+        layout.addWidget(
+            self.search_input
+        )
 
-        self.buttons.clear()
+        layout.addWidget(
+            self.suggestion_label
+        )
 
-        # Get search text
-        search = self.search_input.text().lower()
+        layout.addLayout(
+            self.suggestion_layout
+        )
 
-        # Filter collections
-        collections = [
-            collection
-            for collection in self.all_collections
-            if search in collection[1].lower()
-        ]
+        self.setLayout(
+            layout
+        )
 
-        # Limit visible collections
-        collections = collections[:10]
+        self.update_selected_display()
 
-        # Create buttons
-        for collection in collections:
-            collection_id = collection[0]
-            name = collection[1]
+    # Create compact collection button
+    def create_collection_button(self, text):
+        button = QPushButton(
+            text
+        )
 
-            button = QPushButton(name)
+        button.setStyleSheet(
+            """
+            QPushButton {
+                font-size: 12px;
+                padding-left: 5px;
+                padding-right: 5px;
+                padding-top: 1px;
+                padding-bottom: 2px;
+            }
+            """
+        )
 
-            # Show selected state
-            if collection_id in self.selected_ids:
-                button.setCheckable(True)
-                button.setChecked(True)
+        button.setMinimumWidth(
+            0
+        )
+
+        button.setMaximumWidth(
+            button.fontMetrics().horizontalAdvance(text) + 20
+        )
+
+        button.adjustSize()
+
+        return button
+
+    # Update selected collections display
+    def update_selected_display(self):
+
+        for widget in self.selected_widgets:
+            widget.deleteLater()
+
+        self.selected_widgets.clear()
+
+        if not self.selected_collections:
+
+            label = QLabel(
+                "No collections selected"
+            )
+
+            self.selected_layout.addWidget(
+                label
+            )
+
+            self.selected_widgets.append(
+                label
+            )
+
+        else:
+
+            for collection in self.selected_collections:
+
+                button = self.create_collection_button(
+                    collection
+                )
+
+                button.clicked.connect(
+                    lambda checked, c=collection: self.remove_collection(c)
+                )
+
+                self.selected_layout.addWidget(
+                    button
+                )
+
+                self.selected_widgets.append(
+                    button
+                )
+
+        self.counter_label.setText(
+            f"{len(self.selected_collections)} / {self.max_collections} collections selected"
+        )
+
+    # Update suggestions
+    def update_suggestions(self):
+
+        for widget in self.suggestion_widgets:
+            widget.deleteLater()
+
+        self.suggestion_widgets.clear()
+
+        search = self.search_input.text().strip().lower()
+
+        if not search:
+
+            suggestions = [
+                collection
+                for collection in self.all_collections
+                if collection not in self.selected_collections
+            ]
+
+        else:
+
+            suggestions = [
+                collection
+                for collection in self.all_collections
+                if search in collection.lower()
+                and collection not in self.selected_collections
+            ]
+
+            # Add new collection option
+            if not suggestions:
+
+                button = self.create_collection_button(
+                    f'Add "{search}" collection?'
+                )
+
+                button.clicked.connect(
+                    lambda checked, c=search: self.add_new_collection(c)
+                )
+
+                self.suggestion_layout.addWidget(
+                    button
+                )
+
+                self.suggestion_widgets.append(
+                    button
+                )
+
+                return
+
+        for collection in suggestions[:10]:
+
+            button = self.create_collection_button(
+                collection
+            )
 
             button.clicked.connect(
-                lambda checked, c=collection_id: self.toggle_collection(c)
+                lambda checked, c=collection: self.add_collection(c)
             )
 
-            self.button_layout.addWidget(
+            self.suggestion_layout.addWidget(
                 button
             )
 
-            self.buttons.append(
+            self.suggestion_widgets.append(
                 button
             )
 
-    # Add or remove collection
-    def toggle_collection(self, collection_id):
-        if collection_id in self.selected_ids:
-            self.selected_ids.remove(collection_id)
-        else:
-            self.selected_ids.append(collection_id)
+    # Add collection
+    def add_collection(self, collection):
 
-        self.update_collections()
+        if len(self.selected_collections) >= self.max_collections:
+            return
 
-    # Return selected collection IDs
+        if collection not in self.selected_collections:
+
+            self.selected_collections.append(
+                collection
+            )
+
+        self.update_selected_display()
+
+        self.update_suggestions()
+
+    # Add new collection
+    def add_new_collection(self, collection):
+
+        if len(self.selected_collections) >= self.max_collections:
+            return
+
+        if collection not in self.all_collections:
+
+            self.all_collections.append(
+                collection
+            )
+
+        self.selected_collections.append(
+            collection
+        )
+
+        self.search_input.clear()
+
+        self.update_selected_display()
+
+        self.update_suggestions()
+
+    # Remove collection
+    def remove_collection(self, collection):
+
+        if collection in self.selected_collections:
+
+            self.selected_collections.remove(
+                collection
+            )
+
+        self.update_selected_display()
+
+        self.update_suggestions()
+
+    # Return selected collection names
     def get_collections(self):
-        return self.selected_ids
+
+        return self.selected_collections
