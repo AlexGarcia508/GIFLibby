@@ -7,13 +7,12 @@ import win32api
 import psutil
 import time
 
-# Finds the real Discord window
+
 # Finds the real Discord window
 def find_discord():
     discord_hwnd = None
 
     def callback(hwnd, extra):
-
         nonlocal discord_hwnd
 
         if not win32gui.IsWindowVisible(hwnd):
@@ -25,7 +24,6 @@ def find_discord():
         try:
             process = psutil.Process(pid)
             exe = process.name().lower()
-
             title = win32gui.GetWindowText(hwnd)
 
             # Debug: show every window process + title
@@ -52,14 +50,13 @@ def find_discord():
 
     return discord_hwnd
 
+
 # Focus Discord using input attachment
 def focus_discord():
     discord_hwnd = find_discord()
 
     if not discord_hwnd:
-
         print("Discord not found")
-
         return False
 
     print("SELECTED:", win32gui.GetWindowText(discord_hwnd))
@@ -69,11 +66,9 @@ def focus_discord():
     print("Before:", win32gui.GetWindowText(before))
 
     try:
-
         # Restore ONLY if Discord is minimized
         # Prevents changing window size
         if win32gui.IsIconic(discord_hwnd):
-
             win32gui.ShowWindow(
                 discord_hwnd,
                 win32con.SW_RESTORE
@@ -90,18 +85,27 @@ def focus_discord():
             before
         )
 
-        # Attach input queues
-        win32process.AttachThreadInput(
-            current_thread,
-            foreground_thread,
-            True
-        )
+        # Track which threads we actually attached
+        attached_foreground = False
+        attached_discord = False
 
-        win32process.AttachThreadInput(
-            current_thread,
-            discord_thread,
-            True
-        )
+        # Attach to foreground thread only if it is different
+        if current_thread != foreground_thread:
+            win32process.AttachThreadInput(
+                current_thread,
+                foreground_thread,
+                True
+            )
+            attached_foreground = True
+
+        # Attach to Discord thread only if it is different
+        if current_thread != discord_thread:
+            win32process.AttachThreadInput(
+                current_thread,
+                discord_thread,
+                True
+            )
+            attached_discord = True
 
         # Bring Discord forward
         win32gui.BringWindowToTop(discord_hwnd)
@@ -109,18 +113,20 @@ def focus_discord():
         # Focus Discord
         win32gui.SetForegroundWindow(discord_hwnd)
 
-        # Detach input queues
-        win32process.AttachThreadInput(
-            current_thread,
-            foreground_thread,
-            False
-        )
+        # Detach only the threads we actually attached
+        if attached_foreground:
+            win32process.AttachThreadInput(
+                current_thread,
+                foreground_thread,
+                False
+            )
 
-        win32process.AttachThreadInput(
-            current_thread,
-            discord_thread,
-            False
-        )
+        if attached_discord:
+            win32process.AttachThreadInput(
+                current_thread,
+                discord_thread,
+                False
+            )
 
         time.sleep(0.1)
 
@@ -129,24 +135,20 @@ def focus_discord():
         print("After:", win32gui.GetWindowText(after))
 
         if after == discord_hwnd:
-
             print("Discord focus successful")
-
             return True
 
         print("Discord focus failed")
-
         return False
 
     except Exception as e:
         print("Focus error:", e)
-
         return False
+
 
 # Sends GIF URL to Discord
 def send_gif(url):
     if focus_discord():
-
         pyperclip.copy(url)
 
         time.sleep(0.1)
@@ -162,5 +164,4 @@ def send_gif(url):
         print("GIF sent!")
 
     else:
-
         print("Could not focus Discord.")
