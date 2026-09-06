@@ -11,11 +11,22 @@ from PySide6.QtWidgets import (
 )
 
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QVideoSink
-from PySide6.QtCore import QUrl, Qt, QTimer
+from PySide6.QtCore import QUrl, Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap
 
-from gif_manager import list_gifs
+from gif_manager import list_gifs, send_gif_by_id
 from gui.add_gif_dialog import AddGifDialog
+
+
+# Clickable GIF card
+class GifCard(QWidget):
+    clicked = Signal()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+
+        super().mousePressEvent(event)
 
 
 # Video preview widget using QVideoSink
@@ -117,8 +128,11 @@ class MainWindow(QWidget):
         dialog = AddGifDialog(self)
 
         if dialog.exec():
-            # Force a refresh because a new GIF was added
             self.show_gifs(force=True)
+
+    # Send GIF to Discord when clicked
+    def send_gif(self, gif_id):
+        send_gif_by_id(gif_id)
 
     # Create the window layout
     def create_ui(self):
@@ -261,11 +275,12 @@ class MainWindow(QWidget):
 
     # Create individual GIF card
     def create_gif_card(self, gif):
-        card = QWidget()
+        card = GifCard()
 
         layout = QVBoxLayout()
         layout.setSpacing(0)
 
+        # gif[0] is ID
         # gif[3] is preview_url
         preview = VideoPreview(gif[3])
 
@@ -273,13 +288,22 @@ class MainWindow(QWidget):
 
         card.setLayout(layout)
 
+        card.clicked.connect(
+            lambda gif_id=gif[0]: self.send_gif(gif_id)
+        )
+
         return card, preview
 
     # Create vertical divider
     def create_divider(self):
         divider = QFrame()
 
-        divider.setFrameShape(QFrame.VLine)
-        divider.setFrameShadow(QFrame.Sunken)
+        divider.setFrameShape(
+            QFrame.VLine
+        )
+
+        divider.setFrameShadow(
+            QFrame.Sunken
+        )
 
         return divider
